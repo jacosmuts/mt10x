@@ -3,7 +3,7 @@ import unittest
 from datetime import date
 from unittest import mock
 
-from mt103 import MT103, Text, UserHeader
+from mt10x import MT103, Text, UserHeader
 
 
 MESSAGE1 = (
