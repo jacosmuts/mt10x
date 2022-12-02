@@ -1,3 +1,15 @@
+
+See original respository: https://github.com/danielquinn/mt103 
+
+This is just me hacking around to add MT101 messages so I can manipulate test data.
+
+
+
+below the original readme:
+
+
+
+
 mt103
 =====
 
