@@ -3,14 +3,14 @@ import re
 from datetime import date
 
 
-class MT103:
+class MT10x:
     """
-    Parses an MT103 standard banking format string into a string-like Python
-    object so you can do things like `mt103.basic_header` or `print(mt103)`.
+    Parses an MT10x standard banking format string into a string-like Python
+    object so you can do things like `mt103.basic_header` or `print(mt10x)`.
 
     Usage:
 
-    mt103 = MT103("some-mt-103-string")
+    mt10x = MT10x("some-mt-10x-string")                   #103 and 101 i hope
     print("basic header: {}, bank op code: {}, complete message: {}".format(
         mt103.basic_header,
         mt103.text.bank_operation_code
@@ -20,6 +20,11 @@ class MT103:
     With considerable help from:
     http://www.sepaforcorporates.com/swift-for-corporates/read-swift-message-structure/
     https://www.sepaforcorporates.com/swift-for-corporates/explained-swift-gpi-uetr-unique-end-to-end-transaction-reference/
+
+
+
+    also this (mt10x comment): Some people, when confronted with a problem, think "I know, I'll use regular expressions."
+    Now they have two problems.  (Jamie Zawinski)
     """
 
     # fmt: off
@@ -81,12 +86,79 @@ class MT103:
         if not m:
             return None
 
-        self.basic_header = m.group("basic_header")
+        self.basic_header = BasicHeader(m.group("basic_header") or "")
         self.application_header = m.group("application_header")
         self.trailer = m.group("trailer")
 
         self.user_header = UserHeader(m.group("user_header") or "")
         self.text = Text(m.group("text") or "")
+
+
+class BasicHeader:
+    """
+    Actually just need application header for this module, but might as well do basic header while at it.
+
+    I can only copy and paste regex, not write it, so i will use simple string indexes.
+    """
+
+    def __init__(self, raw):
+
+        self.raw = raw
+
+        self._application_id = None
+        self._service_id = None
+        self._logical_terminal_address = None
+        self._session_number = None
+        self._sequence_number = None
+
+        self._boolean = False
+
+        self._populate_by_parsing()
+
+    def __str__(self):
+        return self.raw
+
+    def __repr__(self):
+        return str(self)
+
+    def __bool__(self):
+        return self._boolean
+
+    @property
+    def application_id(self):
+        return self._application_id
+
+    @property
+    def service_id(self):
+        return self._service_id
+
+    @property
+    def logical_terminal_address(self):
+        return self._logical_terminal_address
+
+    @property
+    def session_number(self):
+        return self._session_number
+
+    @property
+    def sequence_number(self):
+        return self._sequence_number
+
+    def _populate_by_parsing(self):
+        """
+        Using python string indexes, since I suck at regex.
+        """
+
+        if not self.raw:
+            return
+
+        self._boolean = bool(self.raw)  # True
+
+        self._application_id = self.raw[0:1]
+        self._service_id = self.raw[1:3]
+        self._logical_terminal_address = self.raw[3:15]
+        self._session_number = self.raw[15:19]
+        self._sequence_number = self.raw[19:25]
 
 
 class UserHeader:
@@ -160,6 +232,9 @@ class UserHeader:
         self.message_user_reference = m.group("mur")
         self.service_type_identifier = m.group("sti")
         self.unique_end_to_end_transaction_reference = m.group("uetr")
+
+
+
 
 
 class Text:
