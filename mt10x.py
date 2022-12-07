@@ -87,7 +87,7 @@ class MT10x:
             return None
 
         self.basic_header = BasicHeader(m.group("basic_header") or "")
-        self.application_header = m.group("application_header")
+        self.application_header = ApplicationHeader(m.group("application_header"))
         self.trailer = m.group("trailer")
 
         self.user_header = UserHeader(m.group("user_header") or "")
@@ -98,8 +98,7 @@ class BasicHeader:
     """
     Actually just need application header for this module, but might as well do basic header while at it.
 
-    I can only copy and paste regex, not write it, so i will use simple string indexes.
-    """
+     """
 
     def __init__(self, raw):
 
@@ -147,6 +146,9 @@ class BasicHeader:
     def _populate_by_parsing(self):
         """
         Using python string indexes, since I suck at regex.
+
+        #Todo: I have not checked rules around optional fields, below is sufficient for
+               my purpose, but might break for more sophisticated use cases.
         """
 
         if not self.raw:
@@ -159,6 +161,81 @@ class BasicHeader:
         self._logical_terminal_address = self.raw[3:15]
         self._session_number = self.raw[15:19]
         self._sequence_number = self.raw[19:25]
+
+
+class ApplicationHeader:
+    """
+   Simple string indexes.
+    """
+
+    def __init__(self, raw):
+
+        self.raw = raw
+
+        self._input_output = None
+        self._swift_message_type = None
+        self._destination_address = None
+        self._priority = None
+        self._delivery_monitoring = None
+        self._obsolescence_period = None
+
+        self._boolean = False
+
+        self._populate_by_parsing()
+
+    def __str__(self):
+        return self.raw
+
+    def __repr__(self):
+        return str(self)
+
+    def __bool__(self):
+        return self._boolean
+
+    @property
+    def input_output(self):
+        return self._input_output
+
+    @property
+    def swift_message_type(self):
+        return self._swift_message_type
+
+    @property
+    def destination_address(self):
+        return self._destination_address
+
+    @property
+    def priority(self):
+        return self._priority
+
+    @property
+    def delivery_monitoring(self):
+        return self._delivery_monitoring
+
+    @property
+    def obsolescence_period(self):
+        return self._obsolescence_period
+
+
+
+    def _populate_by_parsing(self):
+        """
+        Using python string indexes, since I suck at regex.
+        """
+
+        if not self.raw:
+            return
+
+        self._boolean = bool(self.raw)  # True
+
+        self._input_output = self.raw[0:1]
+        self._swift_message_type = self.raw[1:4]
+        self._destination_address = self.raw[4:16]
+        self._priority = self.raw[16:17]
+        self._delivery_monitoring = self.raw[17:18]
+        self._obsolescence_period = self.raw[18:21]
+
+
 
 
 class UserHeader:
@@ -246,7 +323,7 @@ class Text:
     # fmt: off
     REGEX = re.compile(
         r"^"
-        r"(:20:(?P<transaction_reference>[^\s:]+)\s*)?"
+        r"(:20:(?P<senders_reference>[^\s:]+)\s*)?"
         r"(:13C:/"
           r"(?P<time_indication_class>(CLSTIME|RNCTIME|SNDTIME))/"
           r"(?P<time_indication_time>[\d]{4})"
@@ -291,7 +368,7 @@ class Text:
 
         self.raw = raw
 
-        self.transaction_reference = None
+        self.senders_reference = None
         self.bank_operation_code = None
         self.instruction_code = None
         self.transaction_type_code = None
